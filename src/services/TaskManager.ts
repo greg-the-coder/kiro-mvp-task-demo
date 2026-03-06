@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { Task, CreateTaskInput, Priority } from '../models';
+import type { Task, Priority } from '../models';
 import { StorageService } from './StorageService';
 
 export class TaskManager {
@@ -9,52 +9,52 @@ export class TaskManager {
     this.storage = storage;
   }
 
-  createTask(input: CreateTaskInput): Task {
-    if (!input.title || input.title.trim() === '') {
-      throw new Error('Task title is required');
+  createTask(description: string, priority: Priority): Task {
+    if (!description || description.trim() === '') {
+      throw new Error('Task description is required');
     }
 
     const task: Task = {
       id: uuidv4(),
-      title: input.title.trim(),
-      description: input.description?.trim() ?? '',
-      priority: input.priority ?? 'medium',
-      completed: false,
-      completedAt: null,
+      description: description.trim(),
+      priority: priority,
+      completionDate: null,
       createdAt: new Date(),
-      updatedAt: new Date(),
     };
 
-    this.storage.saveTask(task);
+    const allTasks = this.storage.loadAllTasks();
+    allTasks.push(task);
+    this.storage.saveAllTasks(allTasks);
     return task;
   }
 
   completeTask(id: string): Task {
-    const task = this.storage.loadTask(id);
+    const allTasks = this.storage.loadAllTasks();
+    const task = allTasks.find(t => t.id === id);
+    
     if (!task) {
       throw new Error(`Task not found: ${id}`);
     }
-    if (task.completed) {
+    if (task.completionDate !== null) {
       throw new Error(`Task already completed: ${id}`);
     }
 
-    task.completed = true;
-    task.completedAt = new Date();
-    task.updatedAt = new Date();
-    this.storage.saveTask(task);
+    task.completionDate = new Date();
+    this.storage.saveAllTasks(allTasks);
     return task;
   }
 
   getTask(id: string): Task | null {
-    return this.storage.loadTask(id);
+    const allTasks = this.storage.loadAllTasks();
+    return allTasks.find(t => t.id === id) ?? null;
   }
 
   getOpenTasks(): Task[] {
-    return this.storage.loadAllTasks().filter(t => !t.completed);
+    return this.storage.loadAllTasks().filter(t => t.completionDate === null);
   }
 
   getCompletedTasks(): Task[] {
-    return this.storage.loadAllTasks().filter(t => t.completed);
+    return this.storage.loadAllTasks().filter(t => t.completionDate !== null);
   }
 
   getTasksByPriority(priority: Priority): Task[] {
@@ -64,16 +64,16 @@ export class TaskManager {
   getOpenTasksGroupedByPriority(): Record<Priority, Task[]> {
     const open = this.getOpenTasks();
     return {
-      high: open.filter(t => t.priority === 'high'),
-      medium: open.filter(t => t.priority === 'medium'),
-      low: open.filter(t => t.priority === 'low'),
+      High: open.filter(t => t.priority === 'High'),
+      Medium: open.filter(t => t.priority === 'Medium'),
+      Low: open.filter(t => t.priority === 'Low'),
     };
   }
 
   getCompletedTasksSortedByDate(): Task[] {
     return this.getCompletedTasks().sort((a, b) => {
-      const dateA = a.completedAt!.getTime();
-      const dateB = b.completedAt!.getTime();
+      const dateA = a.completionDate!.getTime();
+      const dateB = b.completionDate!.getTime();
       return dateB - dateA; // newest first
     });
   }

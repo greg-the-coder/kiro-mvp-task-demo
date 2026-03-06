@@ -1,5 +1,5 @@
 import * as fc from 'fast-check';
-import { Task, Priority } from '../../src/models';
+import type { Task, Priority } from '../../src/models';
 
 const priorityArb: fc.Arbitrary<Priority> = fc.constantFrom('High', 'Medium', 'Low');
 

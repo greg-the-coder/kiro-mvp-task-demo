@@ -56,7 +56,7 @@ export class StorageService {
     return {
       ...obj,
       createdAt: new Date(obj.createdAt),
-      updatedAt: new Date(obj.updatedAt),
+      completionDate: obj.completionDate ? new Date(obj.completionDate) : null,
     };
   }
 
@@ -92,7 +92,7 @@ export class StorageService {
     return arr.map((obj: any) => ({
       ...obj,
       createdAt: new Date(obj.createdAt),
-      updatedAt: new Date(obj.updatedAt),
+      completionDate: obj.completionDate ? new Date(obj.completionDate) : null,
     }));
   }
 
